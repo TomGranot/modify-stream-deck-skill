@@ -268,6 +268,24 @@ class StreamDeckProfileTests(unittest.TestCase):
                 width, height = struct.unpack(">II", data[16:24])
                 self.assertEqual((width, height), (144, 144))
 
+    def test_bundled_dictation_buttons_do_not_open_a_wispr_url(self):
+        spec = json.loads(
+            (REPO_ROOT / ".agents/skills/modify-stream-deck/assets/four-button-coding.json").read_text(encoding="utf-8")
+        )
+        for coordinate in ("2,0", "0,1"):
+            with self.subTest(coordinate=coordinate):
+                button = spec["buttons"][coordinate]
+                steps = button["on"] + button["off"]
+                self.assertFalse(
+                    any(step.get("type") == "url" for step in steps),
+                    "Opening a Wispr URL can steal focus from the user's active text field",
+                )
+                hotkeys = [step for step in steps if step.get("type") == "hotkey"]
+                self.assertTrue(hotkeys)
+                for hotkey in hotkeys:
+                    self.assertEqual(hotkey["key"], "space")
+                    self.assertEqual(set(hotkey["modifiers"]), {"ctrl", "option"})
+
     def test_local_documentation_links_resolve(self):
         documents = [
             REPO_ROOT / "README.md",

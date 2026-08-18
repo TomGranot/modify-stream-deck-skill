@@ -14,11 +14,12 @@ Safely change the user's live Stream Deck profile while preserving unrelated but
 2. Locate the profile root. On macOS, start at `~/Library/Application Support/com.elgato.StreamDeck/ProfilesV3`.
 3. Inspect the bundle manifest and page manifests. Run `scripts/streamdeck_profile.py discover` or `inspect`; never choose a page from its UUID alone.
 4. Translate each requested press into explicit actions. Use `submit_text` for “type text, then press Enter.” Do not rely on the Text action's `isSendingEnter` flag in terminal and coding-agent prompt fields.
-5. Create or select a 144 × 144 icon with a short label and one dominant symbol. Give toggle states different colors or symbols.
-6. Write a declarative spec and preview it with `apply --dry-run`. Read [references/spec-format.md](references/spec-format.md) for the accepted action types.
-7. Apply with `--restart-app`. The helper copies the entire `.sdProfile` bundle before the atomic manifest replacement.
-8. Validate JSON, preserved coordinates, installed image dimensions, V3 Multi Action lanes, and `Plugin` descriptors. Stream Deck can render a key's icon yet show ⚠️ when its runtime action shape is invalid.
-9. Do not live-fire a button in a consequential field. Use a blank text editor or ask the user to press it. A successful JSON write does not prove the receiving app accepted the keystrokes.
+5. For dictation, use the app's global keyboard shortcut. Do not open a dictation URL when the user wants to keep typing into the focused field.
+6. Create or select a 144 × 144 icon with a short label and one dominant symbol. Give toggle states different colors or symbols.
+7. Write a declarative spec and preview it with `apply --dry-run`. Read [references/spec-format.md](references/spec-format.md) for the accepted action types.
+8. Apply with `--restart-app`. The helper copies the entire `.sdProfile` bundle before the atomic manifest replacement.
+9. Validate JSON, preserved coordinates, installed image dimensions, V3 Multi Action lanes, and `Plugin` descriptors. Stream Deck can render a key's icon yet show ⚠️ when its runtime action shape is invalid.
+10. Do not live-fire a button in a consequential field. Use a blank text editor or ask the user to press it. A successful JSON write does not prove the receiving app accepted the keystrokes.
 
 ## Safety rules
 
@@ -27,6 +28,7 @@ Safely change the user's live Stream Deck profile while preserving unrelated but
 - Treat button presses as real user input. Never test Enter, delete, send, publish, payment, or destructive shortcuts against the user's active app.
 - Keep credentials, account identifiers, device serials, profile UUIDs, logs, and live manifests out of public examples.
 - Prefer built-in Stream Deck actions. Add a custom plugin only when built-ins cannot express the behavior.
+- Preserve the frontmost app and focused control when an action should type or dictate there. URL schemes can activate their owning app and move focus.
 - Every generated V3 action, including steps inside a Multi Action lane, needs a complete action shell with `ActionID`, `Plugin`, and `Resources`.
 - Prepare and validate the replacement manifest before stopping Stream Deck. Replace it atomically, then allow the app to reload.
 - If the app rewrites the file, restore the backup and use the visible Stream Deck editor instead of racing the process.
@@ -53,6 +55,14 @@ If generated keys render but show ⚠️ when pressed:
 
 Stream Deck 7.4 rendered icons for legacy V2 `Routine` data inside a V3 profile, then rejected every affected key at execution time. The helper now writes V3 action lanes and complete nested steps.
 
+## Focus-preserving dictation
+
+Trigger dictation with the same global shortcut the user presses on their keyboard. A URL such as `wispr-flow://start-hands-free` can activate Wispr and move focus away from the intended text field.
+
+Wispr Flow uses `Fn+Space` for hands-free mode on a standard Mac setup. This skill's hotkey recipe does not model Apple's Fn modifier, so add `Ctrl+Option+Space` as a second hands-free shortcut in Wispr Flow, then use that hotkey in both lanes of the Stream Deck toggle. Keep the user's existing Fn shortcut.
+
+For a button that types before dictation, put the Text step first and the hands-free hotkey second. Do not add app activation, window selection, or textbox discovery.
+
 ## Bundled example
 
 `assets/four-button-coding.json` demonstrates a privacy-safe layout:
@@ -62,7 +72,7 @@ Stream Deck 7.4 rendered icons for legacy V2 `Routine` data inside a V3 profile,
 - NO plus a hands-free dictation toggle;
 - a standalone TALK/STOP toggle.
 
-The example uses placeholder coordinates and public application protocol URLs. Inspect the user's page before applying it, and adjust the coordinates to avoid overwriting buttons they want to keep.
+The example uses placeholder coordinates and `Ctrl+Option+Space` for Wispr Flow hands-free mode. Add that combination as a secondary Wispr shortcut before applying the example. Inspect the user's page and adjust coordinates to avoid overwriting buttons they want to keep.
 
 ## Commands
 

@@ -50,6 +50,8 @@ Supported keys are `return`, `space`, `tab`, and `escape`. Supported modifiers a
 
 The URL may use a registered application protocol such as `my-app://start`.
 
+Use `hotkey` when the destination app must keep keyboard focus. Opening an application protocol can activate its owner and move focus.
+
 ### `open`
 
 ```json
@@ -84,6 +86,18 @@ Sequence steps support `text`, `hotkey`, `url`, and `open`.
 ```
 
 A toggle changes state only when the Stream Deck button runs. If another keyboard shortcut changes the external application, the displayed state may become stale.
+
+For focus-preserving Wispr Flow hands-free dictation, configure `Ctrl+Option+Space` as a secondary hands-free shortcut and use the same hotkey in both lanes:
+
+```json
+{
+  "type": "toggle_sequence",
+  "on": [{"type":"hotkey","key":"space","modifiers":["ctrl","option"]}],
+  "off": [{"type":"hotkey","key":"space","modifiers":["ctrl","option"]}],
+  "icon": "icons/talk.png",
+  "off_icon": "icons/stop.png"
+}
+```
 
 ## Removal
 

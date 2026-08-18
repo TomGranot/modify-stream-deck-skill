@@ -118,6 +118,8 @@ The sanitized starter spec at [four-button-coding.json](.agents/skills/modify-st
 
 Coordinates are examples, not assumptions about your hardware. The skill inspects the active page before applying them.
 
+The dictation buttons send `Ctrl+Option+Space`, which Wispr Flow can use as a secondary hands-free shortcut. Add that shortcut in Wispr Flow before applying the starter. The buttons do not open Wispr, select an application, or search for a textbox, so your current text field keeps focus. Your existing Fn shortcut can remain in place.
+
 ## Supported button recipes
 
 | Recipe | Use it for |
@@ -149,6 +151,8 @@ If Stream Deck rewrites a profile during the change, restore the backup and use 
 ## Known limitation
 
 A Multi Action Switch tracks button presses, not the state of another app. If you stop dictation with a separate keyboard shortcut, the Stream Deck icon can remain on STOP until the next button press resets it.
+
+Application protocol URLs may move focus to their owning app. Use a global hotkey for dictation or any workflow that must act on the current text field.
 
 If an icon renders but the key shows ⚠️ when pressed, inspect the action's V3 shape. Multi Actions need top-level `Actions` lanes, and each nested step needs its own `ActionID`, `Plugin`, and `Resources`. Legacy `Settings.Routine` data can render but does not execute in the V3 profile format used by Stream Deck 7.4.
 

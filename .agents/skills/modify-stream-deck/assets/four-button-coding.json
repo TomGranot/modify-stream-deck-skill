@@ -14,10 +14,10 @@
       "type": "toggle_sequence",
       "on": [
         {"type": "text", "text": "no "},
-        {"type": "url", "url": "wispr-flow://start-hands-free"}
+        {"type": "hotkey", "key": "space", "modifiers": ["ctrl", "option"]}
       ],
       "off": [
-        {"type": "url", "url": "wispr-flow://stop-hands-free"}
+        {"type": "hotkey", "key": "space", "modifiers": ["ctrl", "option"]}
       ],
       "icon": "icons/no-talk.png",
       "off_icon": "icons/stop.png"
@@ -25,10 +25,10 @@
     "0,1": {
       "type": "toggle_sequence",
       "on": [
-        {"type": "url", "url": "wispr-flow://start-hands-free"}
+        {"type": "hotkey", "key": "space", "modifiers": ["ctrl", "option"]}
       ],
       "off": [
-        {"type": "url", "url": "wispr-flow://stop-hands-free"}
+        {"type": "hotkey", "key": "space", "modifiers": ["ctrl", "option"]}
       ],
       "icon": "icons/talk.png",
       "off_icon": "icons/stop.png"
