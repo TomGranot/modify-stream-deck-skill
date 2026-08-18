@@ -157,6 +157,33 @@ class StreamDeckProfileTests(unittest.TestCase):
         self.assertEqual(actions["0,0"]["Plugin"], expected)
         self.assertEqual(actions["0,1"]["Plugin"], expected)
 
+    def test_open_action_uses_stream_deck_path_format(self):
+        self.spec.write_text(
+            json.dumps(
+                {
+                    "buttons": {
+                        "0,0": {
+                            "type": "open",
+                            "path": "/Applications/Example.app",
+                            "icon": "yes.svg",
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        self.run_cli(
+            "apply",
+            "--manifest",
+            str(self.manifest),
+            "--spec",
+            str(self.spec),
+            "--backup-dir",
+            str(self.root / "backups"),
+        )
+        action = json.loads(self.manifest.read_text(encoding="utf-8"))["Controllers"][0]["Actions"]["0,0"]
+        self.assertEqual(action["Settings"], {"path": '"/Applications/Example.app"'})
+
     def test_v3_multi_actions_use_action_lanes_with_complete_nested_shells(self):
         self.run_cli(
             "apply",

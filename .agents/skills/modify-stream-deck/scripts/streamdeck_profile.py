@@ -248,7 +248,7 @@ def build_step(item: dict) -> dict:
         path = item.get("path")
         if not isinstance(path, str) or not path:
             raise ProfileError("open action requires a non-empty string 'path'")
-        return nested("Open", "com.elgato.streamdeck.system.open", {"openInBrowser": True, "path": path})
+        return nested("Open", "com.elgato.streamdeck.system.open", {"path": json.dumps(path)})
     raise ProfileError(f"Unsupported sequence step type: {kind!r}")
 
 
@@ -327,7 +327,7 @@ def build_button(item: dict, spec_path: Path, images_dir: Path, dry_run: bool) -
         path = item.get("path")
         if not isinstance(path, str) or not path:
             raise ProfileError("open action requires a non-empty string 'path'")
-        return action_shell("Open", "com.elgato.streamdeck.system.open", {"openInBrowser": True, "path": path}, [state(icon)])
+        return action_shell("Open", "com.elgato.streamdeck.system.open", {"path": json.dumps(path)}, [state(icon)])
     if kind == "sequence":
         actions = item.get("actions")
         if not isinstance(actions, list) or not actions:
