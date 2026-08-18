@@ -21,6 +21,11 @@ A V3 action normally includes:
   "ActionID": "generated-uuid",
   "LinkedTitle": true,
   "Name": "Text",
+  "Plugin": {
+    "Name": "Text",
+    "UUID": "com.elgato.streamdeck.system.text",
+    "Version": "1.0"
+  },
   "Resources": null,
   "Settings": {},
   "State": 0,
@@ -28,6 +33,8 @@ A V3 action normally includes:
   "UUID": "com.elgato.streamdeck.system.text"
 }
 ```
+
+The `Plugin` object identifies the runtime provider. Stream Deck 7 may render an action's icon but show ⚠️ when pressed if the action shell is incomplete or points to the wrong provider.
 
 Profile versions differ. Copy the shape of a working local action when a built-in action is not covered by the bundled helper.
 
@@ -42,7 +49,29 @@ Profile versions differ. Copy the shape of a working local action when a built-i
 | Multi Action | `com.elgato.streamdeck.multiactions.routine` |
 | Multi Action Switch | `com.elgato.streamdeck.multiactions.routine2` |
 
-Multi Action steps live in `Settings.Routine`. A switch stores its second path in `Settings.RoutineAlt` and has two visual states.
+V3 Multi Actions store their sequences in two top-level lanes:
+
+```json
+{
+  "Actions": [
+    { "Actions": [{ "ActionID": "step-uuid", "Plugin": {}, "Resources": null }] },
+    { "Actions": [] }
+  ],
+  "Settings": {}
+}
+```
+
+The first lane holds the primary sequence. The second holds the alternate sequence for a Multi Action Switch and stays empty for a one-way Multi Action. Each nested step uses a complete V3 action shell. Do not write V2 `Settings.Routine` or `Settings.RoutineAlt` fields into a V3 profile; Stream Deck 7.4 can render the icon and then show ⚠️ when pressed.
+
+Both Multi Action shells use this provider descriptor:
+
+```json
+{
+  "Name": "Multi Action",
+  "UUID": "com.elgato.streamdeck.multiactions",
+  "Version": "1.0"
+}
+```
 
 ## macOS Return key
 

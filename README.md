@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563EB.svg" alt="MIT license"></a>
   <a href="https://github.com/TomGranot/modify-stream-deck-skill/actions/workflows/validate.yml"><img src="https://github.com/TomGranot/modify-stream-deck-skill/actions/workflows/validate.yml/badge.svg" alt="Validation status"></a>
   <a href=".agents/skills/modify-stream-deck/SKILL.md"><img src="https://img.shields.io/badge/Agent%20Skill-Codex%20%7C%20Claude%20Code%20%7C%20Cursor-7C3AED.svg" alt="Compatible with Codex, Claude Code, and Cursor"></a>
-  <img src="https://img.shields.io/badge/tested-Stream%20Deck%207.x%20on%20macOS-111827.svg" alt="Tested with Stream Deck 7.x on macOS">
+  <img src="https://img.shields.io/badge/tested-Stream%20Deck%20Mini%20%7C%207.4.1%20%7C%20macOS-111827.svg" alt="Tested with Stream Deck Mini and Stream Deck 7.4.1 on macOS">
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@ The bundled helper supports text, physical hotkeys, URLs, application paths, ord
 - Python 3.10 or newer;
 - a coding agent that supports the open Agent Skills format.
 
-The profile helper uses only Python's standard library. It has been tested against a Stream Deck Mini and synthetic V3 fixtures. Windows profile editing is outside the current tested scope.
+The profile helper uses only Python's standard library. We tested it on an Elgato Stream Deck Mini with Stream Deck 7.4.1 on macOS and against synthetic V3 fixtures. We have not tested another Stream Deck model or Windows.
 
 ## Install the skill
 
@@ -99,7 +99,7 @@ python3 .agents/skills/modify-stream-deck/scripts/streamdeck_profile.py apply \
   --restart-app
 ```
 
-The apply command refuses invalid coordinates, verifies every icon, copies the full `.sdProfile` bundle, preserves untouched coordinates, and validates the replacement JSON before writing it.
+The apply command refuses invalid coordinates, verifies every icon, copies the full `.sdProfile` bundle, preserves untouched coordinates, and writes complete V3 action lanes and runtime provider metadata.
 
 ## Four-button coding starter
 
@@ -149,6 +149,8 @@ If Stream Deck rewrites a profile during the change, restore the backup and use 
 ## Known limitation
 
 A Multi Action Switch tracks button presses, not the state of another app. If you stop dictation with a separate keyboard shortcut, the Stream Deck icon can remain on STOP until the next button press resets it.
+
+If an icon renders but the key shows ⚠️ when pressed, inspect the action's V3 shape. Multi Actions need top-level `Actions` lanes, and each nested step needs its own `ActionID`, `Plugin`, and `Resources`. Legacy `Settings.Routine` data can render but does not execute in the V3 profile format used by Stream Deck 7.4.
 
 ## Validate the repository
 

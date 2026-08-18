@@ -126,15 +126,61 @@ class StreamDeckProfileTests(unittest.TestCase):
         self.assertEqual(actions["2,1"], self.original_action)
         submit = actions["0,0"]
         self.assertEqual(submit["UUID"], "com.elgato.streamdeck.multiactions.routine")
-        self.assertEqual(submit["Settings"]["Routine"][0]["Settings"]["pastedText"], "yes")
-        return_key = submit["Settings"]["Routine"][1]["Settings"]["Hotkeys"][0]
+        self.assertEqual(submit["Actions"][0]["Actions"][0]["Settings"]["pastedText"], "yes")
+        return_key = submit["Actions"][0]["Actions"][1]["Settings"]["Hotkeys"][0]
         self.assertEqual(return_key["NativeCode"], 36)
         self.assertEqual(return_key["QTKeyCode"], 16777220)
         toggle = actions["0,1"]
         self.assertEqual(toggle["UUID"], "com.elgato.streamdeck.multiactions.routine2")
+        self.assertEqual(len(toggle["Actions"][0]["Actions"]), 1)
+        self.assertEqual(len(toggle["Actions"][1]["Actions"]), 1)
         self.assertEqual(len(toggle["States"]), 2)
         for state in (submit["States"][0], *toggle["States"]):
             self.assertTrue((self.page / state["Image"]).is_file())
+
+    def test_generated_v3_actions_include_runtime_plugin_metadata(self):
+        self.run_cli(
+            "apply",
+            "--manifest",
+            str(self.manifest),
+            "--spec",
+            str(self.spec),
+            "--backup-dir",
+            str(self.root / "backups"),
+        )
+        actions = json.loads(self.manifest.read_text(encoding="utf-8"))["Controllers"][0]["Actions"]
+        expected = {
+            "Name": "Multi Action",
+            "UUID": "com.elgato.streamdeck.multiactions",
+            "Version": "1.0",
+        }
+        self.assertEqual(actions["0,0"]["Plugin"], expected)
+        self.assertEqual(actions["0,1"]["Plugin"], expected)
+
+    def test_v3_multi_actions_use_action_lanes_with_complete_nested_shells(self):
+        self.run_cli(
+            "apply",
+            "--manifest",
+            str(self.manifest),
+            "--spec",
+            str(self.spec),
+            "--backup-dir",
+            str(self.root / "backups"),
+        )
+        actions = json.loads(self.manifest.read_text(encoding="utf-8"))["Controllers"][0]["Actions"]
+        for coordinate in ("0,0", "0,1"):
+            with self.subTest(coordinate=coordinate):
+                action = actions[coordinate]
+                self.assertEqual(action["Settings"], {})
+                self.assertNotIn("Routine", action["Settings"])
+                self.assertNotIn("RoutineAlt", action["Settings"])
+                self.assertEqual(len(action["Actions"]), 2)
+                for lane in action["Actions"]:
+                    self.assertIn("Actions", lane)
+                    for step in lane["Actions"]:
+                        self.assertIn("ActionID", step)
+                        self.assertIn("Plugin", step)
+                        self.assertIn("Resources", step)
 
     def test_invalid_coordinate_refuses_write(self):
         self.spec.write_text(

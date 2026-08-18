@@ -39,6 +39,38 @@ KEYS = {
     "escape": (53, 16777216, 53),
 }
 MODIFIER_BITS = {"option": 1, "ctrl": 2, "shift": 4, "cmd": 8}
+PLUGIN_DESCRIPTORS = {
+    "com.elgato.streamdeck.system.text": {
+        "Name": "Text",
+        "UUID": "com.elgato.streamdeck.system.text",
+        "Version": "1.0",
+    },
+    "com.elgato.streamdeck.system.hotkey": {
+        "Name": "Activate a Key Command",
+        "UUID": "com.elgato.streamdeck.system.hotkey",
+        "Version": "1.0",
+    },
+    "com.elgato.streamdeck.system.website": {
+        "Name": "Website",
+        "UUID": "com.elgato.streamdeck.system.website",
+        "Version": "1.0",
+    },
+    "com.elgato.streamdeck.system.open": {
+        "Name": "Open",
+        "UUID": "com.elgato.streamdeck.system.open",
+        "Version": "1.0",
+    },
+    "com.elgato.streamdeck.multiactions.routine": {
+        "Name": "Multi Action",
+        "UUID": "com.elgato.streamdeck.multiactions",
+        "Version": "1.0",
+    },
+    "com.elgato.streamdeck.multiactions.routine2": {
+        "Name": "Multi Action",
+        "UUID": "com.elgato.streamdeck.multiactions",
+        "Version": "1.0",
+    },
+}
 
 
 class ProfileError(RuntimeError):
@@ -64,12 +96,15 @@ def find_profile_bundle(manifest: Path) -> Path:
 
 def action_summary(action: dict) -> dict:
     settings = action.get("Settings") or {}
+    lanes = action.get("Actions") or []
+    primary = lanes[0].get("Actions", []) if len(lanes) > 0 and isinstance(lanes[0], dict) else []
+    alternate = lanes[1].get("Actions", []) if len(lanes) > 1 and isinstance(lanes[1], dict) else []
     return {
         "name": action.get("Name", ""),
         "uuid": action.get("UUID", ""),
         "text": settings.get("pastedText", ""),
-        "routine_steps": len(settings.get("Routine") or []),
-        "alternate_steps": len(settings.get("RoutineAlt") or []),
+        "routine_steps": len(primary) if lanes else len(settings.get("Routine") or []),
+        "alternate_steps": len(alternate) if lanes else len(settings.get("RoutineAlt") or []),
     }
 
 
@@ -131,10 +166,14 @@ def state(icon: str | None) -> dict:
 
 
 def action_shell(name: str, action_uuid: str, settings: dict, states: list[dict]) -> dict:
+    plugin = PLUGIN_DESCRIPTORS.get(action_uuid)
+    if plugin is None:
+        raise ProfileError(f"No runtime plugin metadata is defined for action {action_uuid!r}")
     return {
         "ActionID": str(uuid.uuid4()),
         "LinkedTitle": True,
         "Name": name,
+        "Plugin": copy.deepcopy(plugin),
         "Resources": None,
         "Settings": settings,
         "State": 0,
@@ -144,14 +183,27 @@ def action_shell(name: str, action_uuid: str, settings: dict, states: list[dict]
 
 
 def nested(name: str, action_uuid: str, settings: dict) -> dict:
+    plugin = PLUGIN_DESCRIPTORS.get(action_uuid)
+    if plugin is None:
+        raise ProfileError(f"No runtime plugin metadata is defined for nested action {action_uuid!r}")
     return {
+        "ActionID": str(uuid.uuid4()),
+        "LinkedTitle": False,
         "Name": name,
-        "OverrideState": -1,
+        "OverrideState": 0,
+        "Plugin": copy.deepcopy(plugin),
+        "Resources": None,
         "Settings": settings,
         "State": 0,
         "States": [{}],
         "UUID": action_uuid,
     }
+
+
+def multi_action_shell(name: str, action_uuid: str, primary: list[dict], alternate: list[dict], states: list[dict]) -> dict:
+    action = action_shell(name, action_uuid, {}, states)
+    action["Actions"] = [{"Actions": primary}, {"Actions": alternate}]
+    return action
 
 
 def hotkey_settings(key: str, modifiers: list[str] | None = None) -> dict:
@@ -263,7 +315,7 @@ def build_button(item: dict, spec_path: Path, images_dir: Path, dry_run: bool) -
         if not isinstance(text, str):
             raise ProfileError("submit_text requires a string 'text'")
         routine = [build_step({"type": "text", "text": text}), build_step({"type": "hotkey", "key": "return"})]
-        return action_shell("Multi Action", "com.elgato.streamdeck.multiactions.routine", {"Routine": routine, "RoutineAlt": []}, [state(icon)])
+        return multi_action_shell("Multi Action", "com.elgato.streamdeck.multiactions.routine", routine, [], [state(icon)])
     if kind == "hotkey":
         return action_shell("Hotkey", "com.elgato.streamdeck.system.hotkey", hotkey_settings(item.get("key", ""), item.get("modifiers")), [state(icon)])
     if kind == "url":
@@ -280,17 +332,24 @@ def build_button(item: dict, spec_path: Path, images_dir: Path, dry_run: bool) -
         actions = item.get("actions")
         if not isinstance(actions, list) or not actions:
             raise ProfileError("sequence requires a non-empty 'actions' array")
-        return action_shell("Multi Action", "com.elgato.streamdeck.multiactions.routine", {"Routine": [build_step(step) for step in actions], "RoutineAlt": []}, [state(icon)])
+        return multi_action_shell(
+            "Multi Action",
+            "com.elgato.streamdeck.multiactions.routine",
+            [build_step(step) for step in actions],
+            [],
+            [state(icon)],
+        )
     if kind == "toggle_sequence":
         on_actions = item.get("on")
         off_actions = item.get("off")
         if not isinstance(on_actions, list) or not on_actions or not isinstance(off_actions, list) or not off_actions:
             raise ProfileError("toggle_sequence requires non-empty 'on' and 'off' arrays")
         off_icon = copy_icon(item.get("off_icon"), spec_path, images_dir, dry_run)
-        return action_shell(
+        return multi_action_shell(
             "Multi Action Switch",
             "com.elgato.streamdeck.multiactions.routine2",
-            {"Routine": [build_step(step) for step in on_actions], "RoutineAlt": [build_step(step) for step in off_actions]},
+            [build_step(step) for step in on_actions],
+            [build_step(step) for step in off_actions],
             [state(icon), state(off_icon)],
         )
     raise ProfileError(f"Unsupported button type: {kind!r}")
