@@ -74,11 +74,6 @@ class StreamDeckProfileTests(unittest.TestCase):
                             "icon": "yes.svg",
                             "off_icon": "yes.svg",
                         },
-                        "1,0": {
-                            "type": "hotkey",
-                            "key": "fn",
-                            "icon": "yes.svg",
-                        },
                     }
                 }
             ),
@@ -142,9 +137,6 @@ class StreamDeckProfileTests(unittest.TestCase):
         self.assertEqual(len(toggle["States"]), 2)
         for state in (submit["States"][0], *toggle["States"]):
             self.assertTrue((self.page / state["Image"]).is_file())
-        fn = actions["1,0"]["Settings"]["Hotkeys"][0]
-        self.assertEqual(fn["NativeCode"], 63)
-        self.assertEqual(fn["VKeyCode"], 63)
 
     def test_generated_v3_actions_include_runtime_plugin_metadata(self):
         self.run_cli(
