@@ -37,6 +37,8 @@ KEYS = {
     "space": (49, 32, 49),
     "tab": (48, 16777217, 48),
     "escape": (53, 16777216, 53),
+    # macOS Fn/Globe key. Wispr Flow uses this as its push-to-talk shortcut.
+    "fn": (63, 33554431, 63),
 }
 MODIFIER_BITS = {"option": 1, "ctrl": 2, "shift": 4, "cmd": 8}
 PLUGIN_DESCRIPTORS = {
