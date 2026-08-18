@@ -1,0 +1,4 @@
+interface:
+  display_name: "Modify Stream Deck"
+  short_description: "Safely inspect and customize Stream Deck profiles"
+  default_prompt: "Inspect my Stream Deck, back it up, and configure the requested buttons with clear icons."

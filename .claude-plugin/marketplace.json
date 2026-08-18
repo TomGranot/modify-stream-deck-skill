@@ -1,0 +1,15 @@
+{
+  "name": "stream-deck-skills",
+  "owner": {
+    "name": "Modify Stream Deck maintainers"
+  },
+  "description": "Portable Agent Skills for safe Stream Deck customization.",
+  "plugins": [
+    {
+      "name": "modify-stream-deck",
+      "source": ".",
+      "description": "Safely inspect, back up, and customize Elgato Stream Deck profiles.",
+      "version": "1.0.0"
+    }
+  ]
+}

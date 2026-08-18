@@ -1,0 +1,37 @@
+{
+  "buttons": {
+    "0,0": {
+      "type": "submit_text",
+      "text": "yes",
+      "icon": "icons/yes-enter.png"
+    },
+    "1,0": {
+      "type": "submit_text",
+      "text": "no",
+      "icon": "icons/no-enter.png"
+    },
+    "2,0": {
+      "type": "toggle_sequence",
+      "on": [
+        {"type": "text", "text": "no "},
+        {"type": "url", "url": "wispr-flow://start-hands-free"}
+      ],
+      "off": [
+        {"type": "url", "url": "wispr-flow://stop-hands-free"}
+      ],
+      "icon": "icons/no-talk.png",
+      "off_icon": "icons/stop.png"
+    },
+    "0,1": {
+      "type": "toggle_sequence",
+      "on": [
+        {"type": "url", "url": "wispr-flow://start-hands-free"}
+      ],
+      "off": [
+        {"type": "url", "url": "wispr-flow://stop-hands-free"}
+      ],
+      "icon": "icons/talk.png",
+      "off_icon": "icons/stop.png"
+    }
+  }
+}

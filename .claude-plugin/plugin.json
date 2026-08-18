@@ -1,0 +1,6 @@
+{
+  "name": "modify-stream-deck",
+  "description": "Safely inspect, back up, and customize Elgato Stream Deck profiles.",
+  "version": "1.0.0",
+  "license": "MIT"
+}

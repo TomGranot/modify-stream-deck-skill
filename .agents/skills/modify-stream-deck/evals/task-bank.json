@@ -1,0 +1,49 @@
+{
+  "revision": "1.0.0",
+  "hosts": ["Codex", "Claude Code", "Cursor"],
+  "routing": [
+    {
+      "kind": "direct-positive",
+      "prompt": "Configure my Stream Deck top-left button to type yes and press Enter.",
+      "should_trigger": true
+    },
+    {
+      "kind": "paraphrased-positive",
+      "prompt": "The text action does not submit in my coding prompt. Make the key behave like a physical Return.",
+      "should_trigger": true
+    },
+    {
+      "kind": "incomplete-input",
+      "prompt": "Put a dictation toggle on my Stream Deck.",
+      "should_trigger": true,
+      "expected_behavior": "Inspect devices and pages before choosing a coordinate. Ask only if the target remains ambiguous."
+    },
+    {
+      "kind": "near-neighbor-negative",
+      "prompt": "Build a commercial Stream Deck SDK plugin with a property inspector.",
+      "should_trigger": false
+    }
+  ],
+  "execution": [
+    {
+      "kind": "representative-success",
+      "fixture": "Synthetic 3x2 V3 page with one preserved navigation key",
+      "expected": "Dry-run succeeds; apply creates a bundle backup, adds a submit_text action, and preserves navigation."
+    },
+    {
+      "kind": "edge",
+      "fixture": "Toggle sequence with two state icons",
+      "expected": "Routine and RoutineAlt are generated with two visual states."
+    },
+    {
+      "kind": "dependency-failure",
+      "fixture": "Spec references a missing icon",
+      "expected": "The helper exits before backup or write and names the missing path."
+    },
+    {
+      "kind": "recovery",
+      "fixture": "Atomic replacement fails after backup",
+      "expected": "The helper restores the manifest from the new backup and returns a non-zero exit."
+    }
+  ]
+}
