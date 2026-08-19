@@ -55,9 +55,9 @@ PLUGIN_DESCRIPTORS = {
         "UUID": "com.elgato.streamdeck.system.website",
         "Version": "1.0",
     },
-    "com.elgato.streamdeck.system.open": {
-        "Name": "Open",
-        "UUID": "com.elgato.streamdeck.system.open",
+    "com.elgato.streamdeck.system.openapp": {
+        "Name": "Open Application",
+        "UUID": "com.elgato.streamdeck.system.openapp",
         "Version": "1.0",
     },
     "com.elgato.streamdeck.multiactions.routine": {
@@ -228,6 +228,23 @@ def hotkey_settings(key: str, modifiers: list[str] | None = None) -> dict:
     return {"Coalesce": True, "Hotkeys": [first, copy.deepcopy(EMPTY_KEY), copy.deepcopy(EMPTY_KEY), copy.deepcopy(EMPTY_KEY)]}
 
 
+def open_application_settings(path_value: str) -> dict:
+    path = Path(path_value).expanduser()
+    app_name = path.stem if path.suffix == ".app" else path.name
+    executable = path / "Contents/MacOS/applet" if path.suffix == ".app" else path
+    return {
+        "app_name": app_name,
+        "args": "",
+        "bring_to_front": False,
+        "bundle_id": "",
+        "bundle_path": str(path),
+        "exec": str(executable),
+        "is_bundle": path.suffix == ".app",
+        "long_press": "quit",
+        "source": str(path),
+    }
+
+
 def build_step(item: dict) -> dict:
     if not isinstance(item, dict):
         raise ProfileError("Every sequence step must be an object")
@@ -248,7 +265,7 @@ def build_step(item: dict) -> dict:
         path = item.get("path")
         if not isinstance(path, str) or not path:
             raise ProfileError("open action requires a non-empty string 'path'")
-        return nested("Open", "com.elgato.streamdeck.system.open", {"path": json.dumps(path)})
+        return nested("Open Application", "com.elgato.streamdeck.system.openapp", open_application_settings(path))
     raise ProfileError(f"Unsupported sequence step type: {kind!r}")
 
 
@@ -327,7 +344,12 @@ def build_button(item: dict, spec_path: Path, images_dir: Path, dry_run: bool) -
         path = item.get("path")
         if not isinstance(path, str) or not path:
             raise ProfileError("open action requires a non-empty string 'path'")
-        return action_shell("Open", "com.elgato.streamdeck.system.open", {"path": json.dumps(path)}, [state(icon)])
+        return action_shell(
+            "Open Application",
+            "com.elgato.streamdeck.system.openapp",
+            open_application_settings(path),
+            [state(icon)],
+        )
     if kind == "sequence":
         actions = item.get("actions")
         if not isinstance(actions, list) or not actions:

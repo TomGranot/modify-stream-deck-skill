@@ -14,10 +14,10 @@
       "type": "toggle_sequence",
       "on": [
         {"type": "text", "text": "no "},
-        {"type": "hotkey", "key": "space", "modifiers": ["ctrl", "option"]}
+        {"type": "open", "path": "~/Applications/Dictation Start.app"}
       ],
       "off": [
-        {"type": "hotkey", "key": "space", "modifiers": ["ctrl", "option"]}
+        {"type": "open", "path": "~/Applications/Dictation Stop.app"}
       ],
       "icon": "icons/no-talk.png",
       "off_icon": "icons/stop.png"
@@ -25,10 +25,10 @@
     "0,1": {
       "type": "toggle_sequence",
       "on": [
-        {"type": "hotkey", "key": "space", "modifiers": ["ctrl", "option"]}
+        {"type": "open", "path": "~/Applications/Dictation Start.app"}
       ],
       "off": [
-        {"type": "hotkey", "key": "space", "modifiers": ["ctrl", "option"]}
+        {"type": "open", "path": "~/Applications/Dictation Stop.app"}
       ],
       "icon": "icons/talk.png",
       "off_icon": "icons/stop.png"

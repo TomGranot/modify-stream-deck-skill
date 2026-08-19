@@ -10,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563EB.svg" alt="MIT license"></a>
   <a href="https://github.com/TomGranot/modify-stream-deck-skill/actions/workflows/validate.yml"><img src="https://github.com/TomGranot/modify-stream-deck-skill/actions/workflows/validate.yml/badge.svg" alt="Validation status"></a>
   <a href=".agents/skills/modify-stream-deck/SKILL.md"><img src="https://img.shields.io/badge/Agent%20Skill-Codex%20%7C%20Claude%20Code%20%7C%20Cursor-7C3AED.svg" alt="Compatible with Codex, Claude Code, and Cursor"></a>
-  <img src="https://img.shields.io/badge/tested-Stream%20Deck%20Mini%20%7C%207.4.1%20%7C%20macOS-111827.svg" alt="Tested with Stream Deck Mini and Stream Deck 7.4.1 on macOS">
+  <img src="https://img.shields.io/badge/tested-Stream%20Deck%20Mini%20%7C%207.5.1%20%7C%20macOS-111827.svg" alt="Tested with Stream Deck Mini and Stream Deck 7.5.1 on macOS">
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@ The bundled helper supports text, physical hotkeys, URLs, application paths, ord
 - Python 3.10 or newer;
 - a coding agent that supports the open Agent Skills format.
 
-The profile helper uses only Python's standard library. We tested it on an Elgato Stream Deck Mini with Stream Deck 7.4.1 on macOS and against synthetic V3 fixtures. We have not tested another Stream Deck model or Windows.
+The profile helper uses only Python's standard library. We tested it on an Elgato Stream Deck Mini with Stream Deck 7.5.1 on macOS and against synthetic V3 fixtures. We have not tested another Stream Deck model or Windows.
 
 ## Install the skill
 
@@ -118,7 +118,47 @@ The sanitized starter spec at [four-button-coding.json](.agents/skills/modify-st
 
 Coordinates are examples, not assumptions about your hardware. The skill inspects the active page before applying them.
 
-The dictation buttons send `Ctrl+Option+Space`, which Wispr Flow can use as a secondary hands-free shortcut. Add that shortcut in Wispr Flow before applying the starter. The buttons do not open Wispr, select an application, or search for a textbox, so your current text field keeps focus. Your existing Fn shortcut can remain in place.
+The dictation buttons launch two small background apps: one sends the app's start URL and one sends its stop URL. The wrappers use `open -g -u`, which sends the URL without bringing the dictation app forward. They do not select an application or search for a textbox, so your current text field keeps focus. Your existing keyboard shortcut can remain in place.
+
+## Focus-safe dictation controls on macOS
+
+Some dictation apps expose registered URLs for hands-free start and stop. Stream Deck can call those URLs directly, but doing so may foreground the dictation app and steal focus from the field where you planned to dictate.
+
+Create two background app wrappers instead. Replace the example protocol with the start and stop URLs from your dictation app's documentation:
+
+```bash
+python3 .agents/skills/modify-stream-deck/scripts/create_background_protocol_app.py \
+  --display-name "Dictation Start" \
+  --url "example-dictation://start-hands-free" \
+  --output-dir "$HOME/Applications"
+
+python3 .agents/skills/modify-stream-deck/scripts/create_background_protocol_app.py \
+  --display-name "Dictation Stop" \
+  --url "example-dictation://stop-hands-free" \
+  --output-dir "$HOME/Applications"
+```
+
+The generator compiles a minimal macOS app with `LSUIElement` set, so it has no Dock presence. Its only action is `open -g -u '<protocol URL>'`. Configure the Stream Deck buttons as **Open Application** actions that point to those two app bundles. The bundled starter already uses these paths:
+
+```text
+~/Applications/Dictation Start.app
+~/Applications/Dictation Stop.app
+```
+
+Run the generator with `--dry-run` first if you want to inspect the AppleScript. It refuses paths that would overwrite an existing app.
+
+### Approaches that failed and why
+
+| Attempt | Why it failed | Use this instead |
+| --- | --- | --- |
+| Direct URL action | The protocol reached the app but could foreground it, moving focus away from the target text field. | Call the URL through a background app built by this repository. |
+| Modifier-only shortcut | A shortcut made of only modifiers does not give Stream Deck a normal key event to send. | Use a real key in the shortcut, or use a background protocol app. |
+| `Fn` in a Stream Deck hotkey | Stream Deck's Hotkey action does not model the Mac's `Fn` modifier as a reliable synthetic key. | Keep the physical `Fn` shortcut and use a background protocol app for the deck. |
+| Push-to-talk shortcut | Stream Deck sends a quick press and release. A push-to-talk binding starts and stops before dictation can continue. | Configure a hands-free command or call separate start and stop URLs. |
+| Open a `.command` script | Stream Deck 7.5 did not reliably execute a shell script selected through its Open action. | Compile a real `.app` with the generator, then use Open Application. |
+| Two built-in Multi Action Switches | Each switch stores its own state. One cannot change the other button's STOP icon. | Accept independent indicators or build a custom Stream Deck SDK plugin that owns shared state. |
+
+The generated wrappers do not press Return when dictation stops. Add a separate deliberate submit action only when the destination supports it safely.
 
 ## Supported button recipes
 
@@ -152,7 +192,7 @@ If Stream Deck rewrites a profile during the change, restore the backup and use 
 
 A Multi Action Switch tracks button presses, not the state of another app. If you stop dictation with a separate keyboard shortcut, the Stream Deck icon can remain on STOP until the next button press resets it.
 
-Application protocol URLs may move focus to their owning app. Use a global hotkey for dictation or any workflow that must act on the current text field.
+Use a background protocol app when a dictation URL must act on the current text field. A direct URL action may move focus to the app that owns the protocol.
 
 If an icon renders but the key shows ⚠️ when pressed, inspect the action's V3 shape. Multi Actions need top-level `Actions` lanes, and each nested step needs its own `ActionID`, `Plugin`, and `Resources`. Legacy `Settings.Routine` data can render but does not execute in the V3 profile format used by Stream Deck 7.4.
 

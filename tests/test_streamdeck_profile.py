@@ -10,6 +10,7 @@ import unittest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / ".agents/skills/modify-stream-deck/scripts/streamdeck_profile.py"
+BACKGROUND_APP_SCRIPT = REPO_ROOT / ".agents/skills/modify-stream-deck/scripts/create_background_protocol_app.py"
 
 
 class StreamDeckProfileTests(unittest.TestCase):
@@ -157,7 +158,7 @@ class StreamDeckProfileTests(unittest.TestCase):
         self.assertEqual(actions["0,0"]["Plugin"], expected)
         self.assertEqual(actions["0,1"]["Plugin"], expected)
 
-    def test_open_action_uses_stream_deck_path_format(self):
+    def test_open_action_uses_stream_deck_open_application_format(self):
         self.spec.write_text(
             json.dumps(
                 {
@@ -182,7 +183,21 @@ class StreamDeckProfileTests(unittest.TestCase):
             str(self.root / "backups"),
         )
         action = json.loads(self.manifest.read_text(encoding="utf-8"))["Controllers"][0]["Actions"]["0,0"]
-        self.assertEqual(action["Settings"], {"path": '"/Applications/Example.app"'})
+        self.assertEqual(action["UUID"], "com.elgato.streamdeck.system.openapp")
+        self.assertEqual(
+            action["Settings"],
+            {
+                "app_name": "Example",
+                "args": "",
+                "bring_to_front": False,
+                "bundle_id": "",
+                "bundle_path": "/Applications/Example.app",
+                "exec": "/Applications/Example.app/Contents/MacOS/applet",
+                "is_bundle": True,
+                "long_press": "quit",
+                "source": "/Applications/Example.app",
+            },
+        )
 
     def test_v3_multi_actions_use_action_lanes_with_complete_nested_shells(self):
         self.run_cli(
@@ -295,7 +310,7 @@ class StreamDeckProfileTests(unittest.TestCase):
                 width, height = struct.unpack(">II", data[16:24])
                 self.assertEqual((width, height), (144, 144))
 
-    def test_bundled_dictation_buttons_do_not_open_a_wispr_url(self):
+    def test_bundled_dictation_buttons_use_background_app_wrappers(self):
         spec = json.loads(
             (REPO_ROOT / ".agents/skills/modify-stream-deck/assets/four-button-coding.json").read_text(encoding="utf-8")
         )
@@ -305,13 +320,53 @@ class StreamDeckProfileTests(unittest.TestCase):
                 steps = button["on"] + button["off"]
                 self.assertFalse(
                     any(step.get("type") == "url" for step in steps),
-                    "Opening a Wispr URL can steal focus from the user's active text field",
+                    "Opening a direct protocol URL can steal focus from the user's active text field",
                 )
-                hotkeys = [step for step in steps if step.get("type") == "hotkey"]
-                self.assertTrue(hotkeys)
-                for hotkey in hotkeys:
-                    self.assertEqual(hotkey["key"], "space")
-                    self.assertEqual(set(hotkey["modifiers"]), {"ctrl", "option"})
+                opened_apps = [step for step in steps if step.get("type") == "open"]
+                self.assertEqual(len(opened_apps), 2)
+                self.assertEqual(opened_apps[0]["path"], "~/Applications/Dictation Start.app")
+                self.assertEqual(opened_apps[1]["path"], "~/Applications/Dictation Stop.app")
+
+    def test_background_protocol_app_dry_run_is_focus_safe(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(BACKGROUND_APP_SCRIPT),
+                "--display-name",
+                "Dictation Start",
+                "--url",
+                "example-dictation://start",
+                "--output-dir",
+                str(self.root / "Applications"),
+                "--dry-run",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        output = json.loads(result.stdout)
+        self.assertTrue(output["app"].endswith("Dictation Start.app"))
+        self.assertIn("/usr/bin/open -g -u 'example-dictation://start'", output["apple_script"])
+
+    def test_background_protocol_app_refuses_unsafe_url(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(BACKGROUND_APP_SCRIPT),
+                "--display-name",
+                "Dictation Start",
+                "--url",
+                "example-dictation://start now",
+                "--output-dir",
+                str(self.root / "Applications"),
+                "--dry-run",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("registered URL without spaces", result.stderr)
 
     def test_local_documentation_links_resolve(self):
         documents = [

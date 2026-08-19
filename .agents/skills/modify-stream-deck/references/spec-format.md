@@ -58,6 +58,10 @@ Use `hotkey` when the destination app must keep keyboard focus. Opening an appli
 {"type":"open","path":"/Applications/Example.app","icon":"icons/app.png"}
 ```
 
+Use `open` to launch a local application bundle. The helper writes Stream Deck's
+native **Open Application** action, including the bundle path and executable
+metadata required by Stream Deck 7.5.
+
 ### `sequence`
 
 ```json
@@ -87,17 +91,35 @@ Sequence steps support `text`, `hotkey`, `url`, and `open`.
 
 A toggle changes state only when the Stream Deck button runs. If another keyboard shortcut changes the external application, the displayed state may become stale.
 
-For focus-preserving Wispr Flow hands-free dictation, configure `Ctrl+Option+Space` as a secondary hands-free shortcut and use the same hotkey in both lanes:
+For focus-preserving hands-free dictation, first build two background app wrappers:
+
+```bash
+python3 scripts/create_background_protocol_app.py \
+  --display-name "Dictation Start" \
+  --url "example-dictation://start-hands-free" \
+  --output-dir "$HOME/Applications"
+
+python3 scripts/create_background_protocol_app.py \
+  --display-name "Dictation Stop" \
+  --url "example-dictation://stop-hands-free" \
+  --output-dir "$HOME/Applications"
+```
+
+Then open those app bundles from each toggle lane:
 
 ```json
 {
   "type": "toggle_sequence",
-  "on": [{"type":"hotkey","key":"space","modifiers":["ctrl","option"]}],
-  "off": [{"type":"hotkey","key":"space","modifiers":["ctrl","option"]}],
+  "on": [{"type":"open","path":"~/Applications/Dictation Start.app"}],
+  "off": [{"type":"open","path":"~/Applications/Dictation Stop.app"}],
   "icon": "icons/talk.png",
   "off_icon": "icons/stop.png"
 }
 ```
+
+The wrapper uses `open -g -u`, so macOS delivers the registered URL without
+bringing its owner to the foreground. Replace the example protocol with the
+one documented by the dictation application.
 
 ## Removal
 
